@@ -1,5 +1,5 @@
 # Root-level ignores
-/node_modules
+node_modules/
 .env
 .env.local
 .env.development.local
@@ -12,7 +12,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Client-specific ignores
-client/node_modules
+client/node_modules/
 client/.pnp
 client/.pnp.js
 client/coverage
