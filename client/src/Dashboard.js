@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, query, where, getDoc, doc, updateDoc  } from "firebase/firestore";
+import { collection, getDocs, query, where, getDoc, doc, updateDoc, onSnapshot  } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import KanbanBoard from "./KanbanBoard";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -8,7 +8,6 @@ import {
   Box,
   Typography,
   Grid2,
-  Grid,
   Card,
   CardContent,
   Drawer,
@@ -18,6 +17,7 @@ import {
   ListItemText,
   AppBar,
   Button,
+  CircularProgress
 } from "@mui/material";
 
 
@@ -27,6 +27,8 @@ const Dashboard = () => {
   console.log(user)
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,40 +40,57 @@ const Dashboard = () => {
     }
   }, [user, navigate]);
 
-  // Fetch projects assigned to the logged-in user
-  const fetchProjects = async () => {
-    try {
-      const q = query(
-        collection(db, "projects"),
-        where("teamMembers", "array-contains", user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const userProjects = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProjects(userProjects);
-    } catch (error) {
-      console.error("Error fetching projects:", error.message);
-    }
+    // Real-time updates for projects
+  const fetchProjects = () => {
+    const projectsQuery = query(
+      collection(db, "projects"),
+      where("teamMembers", "array-contains", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      projectsQuery,
+      (snapshot) => {
+        const userProjects = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProjects(userProjects);
+        setIsLoadingProjects(false); // Data loaded
+      },
+      (error) => {
+        console.error("Error fetching projects:", error);
+        setIsLoadingProjects(false); // Stop loading on error
+      }
+    );
+
+    return unsubscribe;
   };
 
-  // Fetch tasks assigned to the logged-in user
-  const fetchTasks = async () => {
-    try {
-      const q = query(
-        collection(db, "tasks"),
-        where("assignedTo", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const userTasks = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setTasks(userTasks);
-    } catch (error) {
-      console.error("Error fetching tasks:", error.message);
-    }
+
+  // Real-time updates for tasks
+  const fetchTasks = () => {
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("assignedTo", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      tasksQuery,
+      (snapshot) => {
+        const userTasks = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTasks(userTasks);
+        setIsLoadingTasks(false); // Data loaded
+      },
+      (error) => {
+        console.error("Error fetching tasks:", error);
+        setIsLoadingTasks(false); // Stop loading on error
+      }
+    );
+
+    return unsubscribe;
   };
 
   // Update task status
@@ -159,27 +178,43 @@ const getNextStatus = (currentStatus) => {
         <Typography variant="h5" gutterBottom>
           Projects
         </Typography>
-        <Grid2 container spacing={3}>
-          {projects.map((project) => (
-            <Grid2 xs={12} sm={6} md={4} key={project.id}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent>
-                  <Typography variant="h6">{project.name}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {project.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid2>
-          ))}
-        </Grid2>
+        {isLoadingProjects ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
+            <CircularProgress />
+          </Box>
+        ) : projects.length === 0 ? (
+          <Typography variant="body1" color="textSecondary">
+            No projects assigned.
+          </Typography>
+        ) : (
+          <Grid2 container spacing={3}>
+            {projects.map((project) => (
+              <Grid2 xs={12} sm={6} md={4} key={project.id}>
+                <Card sx={{ height: "100%" }}>
+                  <CardContent>
+                    <Typography variant="h6">{project.name}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {project.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid2>
+            ))}
+          </Grid2>
+        )}
+
 
         {/* Tasks Section */}
         <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
           Your Tasks
         </Typography>
         <Grid2 container spacing={3} style={{ display: "flex", justifyContent: "space-between" }}>
-          {["To Do", "In Progress", "Completed"].map((status) => (
+        {isLoadingTasks ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          ["To Do", "In Progress", "Completed"].map((status) => (
             <Grid2
               xs={12}
               sm={4} // Each column takes 1/3 of the row on medium screens and larger
@@ -237,9 +272,9 @@ const getNextStatus = (currentStatus) => {
                   ))}
               </Box>
             </Grid2>
-          ))}
+          ))
+        )}
         </Grid2>
-
       </Box>
     </Box>
   );
