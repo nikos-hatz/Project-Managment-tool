@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const statuses = ["To Do", "In Progress", "Completed"];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,13 +111,6 @@ const Dashboard = () => {
       console.error("Error updating task status:", error.message);
     }
   };
-
-  // Helper function to determine the next status
-const getNextStatus = (currentStatus) => {
-  if (currentStatus === "To Do") return "In Progress";
-  if (currentStatus === "In Progress") return "Completed";
-  return "To Do"; // Loop back for simplicity
-};
   
 
   useEffect(() => {
@@ -257,16 +251,21 @@ const getNextStatus = (currentStatus) => {
                         <Typography variant="body2" color="textSecondary">
                           {task.description}
                         </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          sx={{ mt: 1 }}
-                          onClick={() =>
-                            updateTaskStatus(task.id, getNextStatus(task.status))
-                          }
-                        >
-                          Move to {getNextStatus(task.status)}
-                        </Button>
+                        {statuses.filter(status => status !== task.status).map(status =>{
+                          return(
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            value={status}
+                            sx={{ mt: 1 }}
+                            onClick={(event) =>{
+                              updateTaskStatus(task.id, event.target.value)
+                            }}
+                          >
+                            Move to {status}
+                          </Button>
+                        )})}
+                        
                       </CardContent>
                     </Card>
                   ))}
