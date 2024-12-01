@@ -1,8 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, query, where, getDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, getDoc, doc, updateDoc  } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import KanbanBoard from "./KanbanBoard";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Grid2,
+  Grid,
+  Card,
+  CardContent,
+  Drawer,
+  Toolbar,
+  List,
+  ListItem,
+  ListItemText,
+  AppBar,
+  Button,
+} from "@mui/material";
+
 
 const Dashboard = () => {
   const [user] = useAuthState(auth); // Get the currently logged-in user
@@ -56,6 +73,31 @@ const Dashboard = () => {
       console.error("Error fetching tasks:", error.message);
     }
   };
+
+  // Update task status
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, { status: newStatus });
+      console.log("Task status updated!");
+
+      // Update tasks locally
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+    } catch (error) {
+      console.error("Error updating task status:", error.message);
+    }
+  };
+
+  // Helper function to determine the next status
+const getNextStatus = (currentStatus) => {
+  if (currentStatus === "To Do") return "In Progress";
+  if (currentStatus === "In Progress") return "Completed";
+  return "To Do"; // Loop back for simplicity
+};
   
 
   useEffect(() => {
@@ -78,44 +120,128 @@ const Dashboard = () => {
   }, [user]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Welcome, {userInfo ? userInfo.name : user.email}</h1>
-      <h1>Dashboard</h1>
-      <nav>
-        <Link to="/create-project">Create Project</Link>
-        <Link to="/add-task">Add Task</Link>
-      </nav>
-      <section>
-        <h2>Your Projects</h2>
-        {projects.length === 0 ? (
-          <p>No projects assigned.</p>
-        ) : (
-          <ul>
-            {projects.map((project) => (
-              <li key={project.id}>
-                <strong>{project.name}</strong>: {project.description}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+    <Box sx={{ display: "flex" }}>
+      {/* Sidebar Navigation */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: 240,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box" },
+        }}
+      >
+        <Toolbar />
+        <List>
+          <ListItem component={Link} to="/create-project">
+            <ListItemText primary="Create Project" />
+          </ListItem>
+          <ListItem component={Link} to="/add-task">
+            <ListItemText primary="Add Task" />
+          </ListItem>
+        </List>
+      </Drawer>
 
-      <section>
-        <h2>Your Tasks</h2>
-        {tasks.length === 0 ? (
-          <p>No tasks assigned.</p>
-        ) : (
-          <ul>
-            {tasks.map((task) => (
-              <li key={task.id}>
-                <strong>{task.name}</strong> - {task.status} (Deadline:{" "}
-                {task.deadline ? new Date(task.deadline).toLocaleDateString() : "N/A"})
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}
+      >
+        {/* Header */}
+        <AppBar position="static" sx={{ mb: 3, backgroundColor: "#1976d2" }}>
+          <Toolbar>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Welcome, {userInfo ? userInfo.name : user.email}
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        {/* Projects Section */}
+        <Typography variant="h5" gutterBottom>
+          Projects
+        </Typography>
+        <Grid2 container spacing={3}>
+          {projects.map((project) => (
+            <Grid2 xs={12} sm={6} md={4} key={project.id}>
+              <Card sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h6">{project.name}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {project.description}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid2>
+          ))}
+        </Grid2>
+
+        {/* Tasks Section */}
+        <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+          Your Tasks
+        </Typography>
+        <Grid2 container spacing={3} style={{ display: "flex", justifyContent: "space-between" }}>
+          {["To Do", "In Progress", "Completed"].map((status) => (
+            <Grid2
+              xs={12}
+              sm={4} // Each column takes 1/3 of the row on medium screens and larger
+              key={status}
+              style={{
+                minWidth: "30%", // Ensures consistent column width
+                flex: "1", // Equal flex for all columns
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: "#f5f5f5",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  minHeight: "300px", // Ensures each column has enough height even if empty
+                }}
+              >
+                <Typography variant="h6" sx={{ marginBottom: "10px" }}>
+                  {status}
+                </Typography>
+                {tasks
+                  .filter((task) => task.status === status)
+                  .map((task) => (
+                    <Card
+                      key={task.id}
+                      sx={{
+                        mb: 2,
+                        backgroundColor: "#ffffff",
+                        borderLeft: `4px solid ${
+                          status === "To Do"
+                            ? "#f57c00"
+                            : status === "In Progress"
+                            ? "#0288d1"
+                            : "#2e7d32"
+                        }`,
+                      }}
+                    >
+                      <CardContent>
+                        <Typography variant="subtitle1">{task.name}</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {task.description}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{ mt: 1 }}
+                          onClick={() =>
+                            updateTaskStatus(task.id, getNextStatus(task.status))
+                          }
+                        >
+                          Move to {getNextStatus(task.status)}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </Box>
+            </Grid2>
+          ))}
+        </Grid2>
+
+      </Box>
+    </Box>
   );
 };
 

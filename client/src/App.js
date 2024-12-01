@@ -9,6 +9,7 @@ import { Navigate } from "react-router-dom";
 import SignUp from "./SignUp";
 import CreateProject from "./CreateProject";
 import AddTask from "./AddTask";
+import ProjectDetails from "./ProjectDetails";
 
 function App() {
 
@@ -39,6 +40,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AddTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectDetails />
             </ProtectedRoute>
           }
         />
