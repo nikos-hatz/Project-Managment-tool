@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useNavigate } from "react-router-dom";
 
@@ -19,31 +19,32 @@ const SignUp = () => {
   
   
 
-    const handleSignUp = async (e) => {
+  const handleSignUp = async (e) => {
     try {
-        e.preventDefault();
-        setError("")
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Add user to Firestore
-        await addDoc(collection(db, "users"), {
+      e.preventDefault();
+      setError("");
+  
+      // Create a new user with email and password
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      // Add user to Firestore with UID as document ID
+      await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         name: name,
-        role: "Contributor",
+        role: "Member", // Default role
         createdAt: new Date(),
-        });
-
-
-        console.log("User signed up and added to Firestore:", user.uid);
-        navigate("/dashboard");
+      });
+  
+      console.log("User signed up and added to Firestore:", user.uid);
+      navigate("/dashboard");
     } catch (err) {
-        setError(err.message);
+      setError(err.message);
       console.error("Error during sign-up:", err.message);
-
     }
-    };
+  };
+  
 
 
   return (
