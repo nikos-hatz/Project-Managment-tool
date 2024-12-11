@@ -10,20 +10,33 @@ import SignUp from "./SignUp";
 import CreateProject from "./CreateProject";
 import AddTask from "./AddTask";
 import ProjectDetails from "./ProjectDetails";
+import AdminPage from "./AdminPage";
+import { useSelector } from "react-redux";
+import SignIn from "./SignIn";
 
 function App() {
+
+  const role = useSelector((state) => state.user.role);
 
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute path={"/admin"} role={role}>
+              <AdminPage />
             </ProtectedRoute>
           }
         />

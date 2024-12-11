@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, query, where, getDoc, doc, updateDoc, onSnapshot  } from "firebase/firestore";
+import { collection, getDocs, query, where, getDoc, doc, updateDoc, onSnapshot, orderBy, addDoc  } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import KanbanBoard from "./KanbanBoard";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setNotifications, addNotification } from "./redux/notificationsSlice";
+import Notifications from "./Notifications";
 import {
   Box,
   Typography,
@@ -29,8 +32,10 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const [selectedProjectId, setSelectedProjectId] = useState(null); // Track selected project
   const statuses = ["To Do", "In Progress", "Completed"];
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (!user) {
@@ -99,7 +104,18 @@ const Dashboard = () => {
     try {
       const taskRef = doc(db, "tasks", taskId);
       await updateDoc(taskRef, { status: newStatus });
-      console.log("Task status updated!");
+      // Create a notification
+    const taskDoc = await getDoc(taskRef);
+    const taskData = taskDoc.data();
+
+    await addDoc(collection(db, "notifications"), {
+      userId: taskData.assignedTo, // Notify the assigned user
+      message: `Task "${taskData.name}" was moved to ${newStatus}.`,
+      createdAt: new Date(),
+      read: false,
+    });
+
+    console.log("Task status updated and notification sent!");
 
       // Update tasks locally
       setTasks((prevTasks) =>
@@ -117,9 +133,15 @@ const Dashboard = () => {
     const fetchUserInfo = async () => {
       if (user) {
         try {
+          console.log(user)
+          // Fetch the document from Firestore
           const userDoc = await getDoc(doc(db, "users", user.uid));
+          console.log("Fetched User Doc:", userDoc);
+  
+          // Check if the document exists
           if (userDoc.exists()) {
-            setUserInfo(userDoc.data());
+            console.log("User Data:", userDoc.data()); // Log the data to debug
+            setUserInfo(userDoc.data()); // Set user info state
           } else {
             console.log("No such document!");
           }
@@ -128,9 +150,36 @@ const Dashboard = () => {
         }
       }
     };
-
+  
     fetchUserInfo();
   }, [user]);
+
+
+  useEffect(() => {
+    if (user) {
+      const notificationsQuery = query(
+        collection(db, "notifications"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+
+      const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+        const newNotifications = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        dispatch(setNotifications(newNotifications));
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user, dispatch]);
+
+   // Filter tasks based on selected project
+   const filteredTasks = selectedProjectId
+   ? tasks.filter((task) => task.projectId === selectedProjectId)
+   : tasks;
+  
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -150,6 +199,15 @@ const Dashboard = () => {
           </ListItem>
           <ListItem component={Link} to="/add-task">
             <ListItemText primary="Add Task" />
+          </ListItem>
+          {console.log(user)}
+          {userInfo.role === "Admin" && (
+            <Button component={Link} to="/admin" variant="contained">
+              Admin Panel
+            </Button>
+          )}
+          <ListItem>
+            <Notifications />
           </ListItem>
         </List>
       </Drawer>
@@ -184,7 +242,10 @@ const Dashboard = () => {
           <Grid2 container spacing={3}>
             {projects.map((project) => (
               <Grid2 xs={12} sm={6} md={4} key={project.id}>
-                <Card sx={{ height: "100%" }}>
+                <Card
+                  sx={{ height: "100%", cursor: "pointer" }}
+                  onClick={() => setSelectedProjectId(project.id)} // Set selected project
+                >
                   <CardContent>
                     <Typography variant="h6">{project.name}</Typography>
                     <Typography variant="body2" color="textSecondary">
@@ -196,6 +257,21 @@ const Dashboard = () => {
             ))}
           </Grid2>
         )}
+         {selectedProjectId && (
+          <Button onClick={() => setSelectedProjectId(null)} variant="contained" sx={{ mt: 2 }}>
+            Show All Tasks
+          </Button>
+        )}
+        {/* <Typography variant="h5" gutterBottom>
+            Your Kanban Board
+        </Typography>
+          {isLoadingTasks ? (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <KanbanBoard tasks={tasks} updateTaskStatus={updateTaskStatus} />
+          )} */}
 
 
         {/* Tasks Section */}
