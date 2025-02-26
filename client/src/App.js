@@ -2,7 +2,7 @@ import React from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./Login";
+import Calendar  from "./Calendar";
 import Dashboard from "./Dashboard";
 import ProtectedRoute from './ProtectedRoute'
 import { Navigate } from "react-router-dom";
@@ -13,10 +13,18 @@ import ProjectDetails from "./ProjectDetails";
 import AdminPage from "./AdminPage";
 import { useSelector } from "react-redux";
 import SignIn from "./SignIn";
+import Reports from "./Reports";
+import Chat from "./Chat";
+import TaskPage from "./TaskPage";
+import ManualTimeEntry from "./ManualTimeEntry";
 
 function App() {
 
   const role = useSelector((state) => state.user.role);
+  const tasks = useSelector((state) => state.tasks.list);
+  const user = useSelector((state) => state.user);
+  console.log(tasks,user )
+ 
 
   return (
     <Router>
@@ -24,6 +32,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/task/:taskId" element={<TaskPage tasks={tasks} />} />
         <Route
           path="/dashboard"
           element={
@@ -57,10 +66,42 @@ function App() {
           }
         />
         <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <Calendar tasks={tasks} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/projects/:id"
           element={
             <ProtectedRoute>
               <ProjectDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <Chat userId={user?.userInfo?.uid} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/time-entry"
+          element={
+            <ProtectedRoute>
+              <ManualTimeEntry userId={user?.userInfo?.uid} />
             </ProtectedRoute>
           }
         />
