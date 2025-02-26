@@ -89,25 +89,22 @@ const SignIn = (props) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError(""); // Clear previous error messages
+    setError("");
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // Fetch additional user info from Firestore
       const userDoc = await getDoc(doc(db, "users", user.uid));
+      const tasks = await getDoc(doc(db, "tasks", user.uid));
+      console.log(tasks)
       if (userDoc.exists()) {
         const userData = userDoc.data();
-
-        // Dispatch user data to Redux store
         dispatch(
           setUser({
-            userInfo: { email: user.email, name: userData.name },
+            userInfo: { email: user.email, name: userData.name, uid: user.uid },
             role: userData.role,
           })
         );
-
-        navigate("/dashboard"); // Redirect to dashboard
+        navigate("/dashboard");
       } else {
         console.error("User data not found in Firestore");
         setError("User data not found.");
