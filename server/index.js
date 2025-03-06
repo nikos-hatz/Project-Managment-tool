@@ -8,6 +8,8 @@ import chatRoutes from "./routes/chatRoutes.js";
 import filesRoutes from './routes/filesRoutes.js'
 import taskRoutes from './routes/taskRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
+import usersRoutes from './routes/usersRoutes.js'
+import projectsRoutes from './routes/projectsRoutes.js'
 import cors from "cors";
 
 dotenv.config();
@@ -98,6 +100,8 @@ app.post(
         }
     }
 );
+app.use("/api/users", usersRoutes);
+app.use("/api/projects", projectsRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/files", filesRoutes);
