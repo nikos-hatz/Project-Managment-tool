@@ -16,6 +16,7 @@ import SignIn from "./SignIn";
 import Reports from "./Reports";
 import Chat from "./Chat";
 import TaskPage from "./TaskPage";
+import Layout from "./Layout";
 import ManualTimeEntry from "./ManualTimeEntry";
 
 function App() {
@@ -28,10 +29,11 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<SignIn />} />
+      <Routes> 
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/" element={<Layout />}>
         <Route path="/task/:taskId" element={<TaskPage tasks={tasks} />} />
         <Route
           path="/dashboard"
@@ -105,6 +107,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+         </Route>
       </Routes>
     </Router>
   );

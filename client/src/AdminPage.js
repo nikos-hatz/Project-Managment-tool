@@ -1,27 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { useSelector } from "react-redux";
 import { db } from "./firebase";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Typography, Paper } from "@mui/material";
 
 const AdminPage = () => {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersData = usersSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setUsers(usersData);
-      } catch (error) {
-        console.error("Error fetching users:", error.message);
-      }
-    };
-
-    fetchUsers();
-  }, []);
+  const [users, setUsers] = useState(useSelector((state) =>state?.usersStore?.allUsers) || []);
 
   const updateUserRole = async (userId, newRole) => {
     try {

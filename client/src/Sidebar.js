@@ -12,6 +12,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import WorkHistoryOutlinedIcon from '@mui/icons-material/WorkHistoryOutlined';
 
 const Sidebar = () => {
     const user = useSelector((state) =>state.user)
@@ -72,7 +73,7 @@ const Sidebar = () => {
           <ListItemText primary="Chat" />
         </ListItem>
         <ListItem button component={Link} to="/time-entry">
-          <ListItemIcon sx={{ color: "black" }}><WorkIcon /></ListItemIcon>
+          <ListItemIcon sx={{ color: "black" }}><WorkHistoryOutlinedIcon /></ListItemIcon>
           <ListItemText primary="Time Entry" />
         </ListItem>
       </List>

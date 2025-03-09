@@ -52,12 +52,14 @@ const Reports = () => {
   };
 
   return (
-    <Box sx={{ padding: "10px" }}>
+    <Paper elevation={3} sx={{ padding: 4, maxWidth: 1600, margin: "auto", mt: 1 }}>
+    <Box>
       {loading && <LinearProgress sx={{ mb: 2 }} />}
 
       <FormControl fullWidth>
         <InputLabel>Select Report</InputLabel>
         <Select
+        label='Select Report'
           value={selectedReport}
           onChange={(e) => setSelectedReport(e.target.value)}
         >
@@ -97,6 +99,7 @@ const Reports = () => {
       )}
       {!loading && reportData && selectedReport === "time-tracking" && <TimeTrackingReport data={reportData} />}
     </Box>
+    </Paper>
   );
 };
 
